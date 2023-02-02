@@ -6,22 +6,6 @@ executors:
       - image: cimg/node:14.15.0-browsers
     working_directory: ~/repo
     resource_class: medium+
-
-aliases:
-  - &cache_restore
-    restore_cache:
-      keys:
-        - v2-dependencies-{{ checksum "yarn.lock" }}
-
-  - &cache_save
-    save_cache:
-      paths:
-        - node_modules
-        - ~/.cache/yarn
-      key: v2-dependencies-{{ checksum "yarn.lock" }}
-
-  - &install_dependencies
-    run: yarn install --frozen-lockfile --cache-folder ~/.cache/yarn
       
 jobs:      
   plugin-e2e-test:
@@ -29,9 +13,6 @@ jobs:
     parallelism: 1
     steps:
       - checkout
-      - *cache_restore
-      - *install_dependencies
-      - *cache_save
 
       - run:
           name: Build the plugin
