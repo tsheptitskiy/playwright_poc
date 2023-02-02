@@ -12,22 +12,15 @@ jobs:
     executor: plugin-e2e-tester
     parallelism: 1
     steps:
-      - checkout
-
-      - run:
-          name: Build the plugin
-          command: |
-            yarn plugin build:e2e     
-
+      - checkout  
       - run:
           name: Install playwright
           command: |
             npx playwright install --with-deps chromium
-
       - run:
           name: Run E2E tests
           command: |
-            yarn plugin e2e
+            npx playwright test chromium
           environment:
             PLAYWRIGHT_JUNIT_OUTPUT_DIR: ~/repo/apps/plugin/e2e/reports/junit/
             PLAYWRIGHT_JUNIT_OUTPUT_NAME: results.xml
