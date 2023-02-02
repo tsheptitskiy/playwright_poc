@@ -1,26 +1,66 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
-jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+executors:
+  plugin-e2e-tester:
     docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+      - image: cimg/node:14.15.0-browsers
+    working_directory: ~/repo
+    resource_class: medium+
+
+aliases:
+  - &cache_restore
+    restore_cache:
+      keys:
+        - v2-dependencies-{{ checksum "yarn.lock" }}
+
+  - &cache_save
+    save_cache:
+      paths:
+        - node_modules
+        - ~/.cache/yarn
+      key: v2-dependencies-{{ checksum "yarn.lock" }}
+
+  - &install_dependencies
+    run: yarn install --frozen-lockfile --cache-folder ~/.cache/yarn
+      
+jobs:      
+  plugin-e2e-test:
+    executor: plugin-e2e-tester
+    parallelism: 1
     steps:
       - checkout
-      - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+      - *cache_restore
+      - *install_dependencies
+      - *cache_save
 
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+      - run:
+          name: Build the plugin
+          command: |
+            yarn plugin build:e2e     
+
+      - run:
+          name: Install playwright
+          command: |
+            npx playwright install --with-deps chromium
+
+      - run:
+          name: Run E2E tests
+          command: |
+            yarn plugin e2e
+          environment:
+            PLAYWRIGHT_JUNIT_OUTPUT_DIR: ~/repo/apps/plugin/e2e/reports/junit/
+            PLAYWRIGHT_JUNIT_OUTPUT_NAME: results.xml
+
+      - store_test_results:
+          path: ~/repo/apps/plugin/e2e/reports/junit
+
+      - store_artifacts:
+          path: ~/repo/apps/plugin/e2e/recordings
+          destination: artifacts
+
+
 workflows:
-  say-hello-workflow:
+  version: 2
+  all:
     jobs:
-      - say-hello
+      - plugin-e2e-test
