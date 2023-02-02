@@ -1,44 +1,25 @@
 version: 2.1
-
-executors:
-  plugin-e2e-tester:
+jobs:
+  run-test:
     docker:
-      - image: cimg/node:14.15.0-browsers
-    working_directory: ~/repo
-    resource_class: medium+
-      
-jobs:      
-  plugin-e2e-test:
-    executor: plugin-e2e-tester
-    parallelism: 1
+      - image: mcr.microsoft.com/playwright:v1.30.0-focal
+    # Steps to the job
     steps:
       - checkout
       - run: 
-        name: Install npm playwright
-        ommand: | 
-            npm i -D @playwright/test  
+          name: Install npm Playwright
+          command: npm i -D @playwright/test
+      - run: 
+          name: Install Playwright
+          command: npx playwright install
+      - run: npx playwright install
       - run:
-          name: Install playwright
-          command: |
-            npx playwright install --with-deps chromium
-      - run:
-          name: Run E2E tests
-          command: |
-            npx playwright test
-          environment:
-            PLAYWRIGHT_JUNIT_OUTPUT_DIR: ~/repo/apps/plugin/e2e/reports/junit/
-            PLAYWRIGHT_JUNIT_OUTPUT_NAME: results.xml
-
+          name: Run test
+          command: PLAYWRIGHT_JUNIT_OUTPUT_NAME=results.xml npx playwright test --reporter=junit --project=chromium
       - store_test_results:
-          path: ~/repo/apps/plugin/e2e/reports/junit
-
-      - store_artifacts:
-          path: ~/repo/apps/plugin/e2e/recordings
-          destination: artifacts
-
-
+          path: results.xml
+# Invoke jobs via workflows
 workflows:
-  version: 2
-  all:
+  run-test-workflow:
     jobs:
-      - plugin-e2e-test
+      - run-test
