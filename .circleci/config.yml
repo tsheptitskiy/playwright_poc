@@ -13,7 +13,10 @@ jobs:
     parallelism: 1
     steps:
       - checkout
-      - run: npm i -D @playwright/test  
+      - run: 
+        name: Install npm playwright
+        ommand: | 
+            npm i -D @playwright/test  
       - run:
           name: Install playwright
           command: |
@@ -21,7 +24,7 @@ jobs:
       - run:
           name: Run E2E tests
           command: |
-            npx playwright test chromium
+            npx playwright test
           environment:
             PLAYWRIGHT_JUNIT_OUTPUT_DIR: ~/repo/apps/plugin/e2e/reports/junit/
             PLAYWRIGHT_JUNIT_OUTPUT_NAME: results.xml
