@@ -12,7 +12,8 @@ jobs:
     executor: plugin-e2e-tester
     parallelism: 1
     steps:
-      - checkout  
+      - checkout
+      - run: npm i -D @playwright/test  
       - run:
           name: Install playwright
           command: |
